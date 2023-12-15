@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>An Simple Example of Synced Maps</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+        }
+        #map1, #map2 {
+            width: 100vw;
+            height: calc(50vh - 3px);
+        }
+        #map1 {
+            border-bottom: 6px solid black; 
+        }
+    </style>
+
+</head>
+<body>
+    
+    <div id="map1"></div>
+    <div id="map2"></div>
+    
+    <script>
+
+        const initialPoint = [47.3667, 8.5500];
+
+        const map1 = L.map('map1').setView(initialPoint, 13);
+
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map1);
+
+        const map2 = L.map('map2').setView(initialPoint, 13);
+
+        L.tileLayer('https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage/default/current/3857/{z}/{x}/{y}.jpeg', {
+            attribution: '&copy; <a href="https://www.swisstopo.admin.ch/">swisstopo</a>',
+            minZoom: 2,
+            maxZoom: 19,
+            bounds: [[45.398181, 5.140242], [48.230651, 11.47757]]
+        }).addTo(map2);
+
+        /**
+         * Updates otherMap based on triggerMap.
+         */
+        function syncMap(event, triggerMap, otherMap) {
+
+            // prevent an endless loop by only accepting move
+            // events with an original event, interestingly, a
+            // zoom event does not result in an endless loop
+            if (event.type === 'move' && !event.originalEvent) {
+                return;
+            }
+
+            const center = triggerMap.getCenter();
+            const zoomLevel = triggerMap.getZoom();
+            
+            otherMap.setView(center, zoomLevel);
+
+        }
+
+        map1.addEventListener('move', event => syncMap(event, map1, map2));
+        map1.addEventListener('zoom', event => syncMap(event, map1, map2));
+
+        map2.addEventListener('move', event => syncMap(event, map2, map1));
+        map2.addEventListener('zoom', event => syncMap(event, map2, map1));
+
+    </script>
+
+</body>
+</html>
